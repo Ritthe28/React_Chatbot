@@ -5,6 +5,7 @@ const FrontPage = () => {
   const rat = useRef();
   const answerSectionRef = useRef(null);
   const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Example useEffect for hiding an element (if needed)
@@ -17,26 +18,38 @@ const FrontPage = () => {
   const handleClick = async () => {
     const answerSection = answerSectionRef.current;
     const div = document.createElement("div");
-    div.classList.add("query", "self-end", "bg-blue-500", "text-white", "p-3", "rounded-lg", "w-full", "max-w-[60vw]", "md:max-w-[40vw]", "transition", "transform", "hover:scale-105");
+    div.classList.add("query", "self-end", "bg-blue-500", "text-white", "p-3", "rounded-lg", "w-full", "max-w-[60vw]", "md:max-w-[40vw]");
     div.innerText = inputValue;
     answerSection.appendChild(div);
 
-    const genAI = new GoogleGenerativeAI("AIzaSyDieL-Miyg615JvzO4QPLg4yV0tnCZEyqY"); // Use environment variable for the API key
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-    const prompt = inputValue;
-    const ans = document.createElement("div");
-    ans.classList.add("answer", "self-start", "bg-green-500", "text-white", "p-3", "rounded-lg", "w-full", "max-w-[60vw]", "md:max-w-[40vw]", "transition", "transform", "hover:scale-105");
-
-    const result = await model.generateContent(prompt);
-    ans.innerText = result.response.text();
-    answerSection.appendChild(ans);
-    // console.log(result.response.text());
-
-    // Scroll to bottom
-    answerSection.scrollTo({
-      top: answerSection.scrollHeight,
-      behavior: 'smooth'
+    // Scroll to the prompt only
+    div.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end'
     });
+
+    setIsLoading(true);
+
+    // Delay the loading message appearance
+    setTimeout(async () => {
+      const genAI = new GoogleGenerativeAI("AIzaSyDieL-Miyg615JvzO4QPLg4yV0tnCZEyqY"); // Use environment variable for the API key
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+      const prompt = inputValue;
+      const ans = document.createElement("div");
+      ans.classList.add("answer", "self-start", "bg-green-500", "text-white", "p-3", "rounded-lg", "w-full", "max-w-[60vw]", "md:max-w-[40vw]");
+
+      const result = await model.generateContent(prompt);
+      ans.innerText = result.response.text();
+      answerSection.appendChild(ans);
+
+      // Scroll to the new answer partially
+      ans.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+
+      setIsLoading(false);
+    }, 1000); // 1-second delay
   };
 
   const handleChange = (e) => {
@@ -50,10 +63,15 @@ const FrontPage = () => {
           <div className="bg-gray-600 text-white p-3 rounded-lg w-full flex justify-center items-center">
             Search anything you want
           </div>
+          {isLoading && (
+            <div className="loading self-start bg-yellow-500 text-white p-3 rounded-lg w-full max-w-[60vw] md:max-w-[40vw]">
+              Loading...
+            </div>
+          )}
         </div>
         <div className="input flex mt-4">
           <input value={inputValue} onChange={handleChange} type="text" className="w-[85%] p-3 rounded-l-lg border-none focus:outline-none text-black" placeholder="Type your message..." />
-          <button className="w-[15%] bg-blue-600 text-white p-3 rounded-r-lg transition-transform transform hover:scale-105" onClick={handleClick}>
+          <button className="w-[15%] bg-blue-600 text-white p-3 rounded-r-lg" onClick={handleClick}>
             Send
           </button>
         </div>
